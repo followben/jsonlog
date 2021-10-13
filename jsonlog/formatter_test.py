@@ -1,0 +1,119 @@
+import json
+import logging
+from typing import Any, Dict
+
+import pytest
+from jsonlog.formatter import JSONFormatter, SanitizedJSONFormatter
+
+
+@pytest.fixture
+def logger():
+    logger = logging.getLogger()
+    formatter = JSONFormatter()
+    for handler in logger.handlers:
+        handler.setFormatter(formatter)
+    return logger
+
+
+def test_formatter_produces_json(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    log_message = "this is a warning"
+    logger.warning(log_message)
+    log: Dict[str, Any] = json.loads(caplog.text)
+    assert log.get("level") == "WARNING"
+    assert log.get("message") == log_message
+
+
+def test_formatter_includes_extra_keys(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    extra = {"first_key": "first_value", "second_key": "second_value"}
+    logger.warning("this is a warning", extra=extra)
+    log: Dict[str, Any] = json.loads(caplog.text)
+    assert log.get("first_key") == "first_value"
+    assert log.get("second_key") == "second_value"
+
+
+def test_formatter_handles_exceptions_in_messages(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    logger.warning(Exception("oh no"))
+    log: Dict[str, Any] = json.loads(caplog.text)
+    assert log.get("level") == "WARNING"
+    assert log.get("message") == "oh no"
+
+
+def test_formatter_handles_bad_json(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    logger.warning({"unserializable_thing_1": Exception()}, extra={"unserializable_thing_2": Exception()})
+    log: Dict[str, Any] = json.loads(caplog.text)
+    assert log.get("message") == "ERROR: could not serialize log message"
+    assert "level" in log
+    assert "timestamp" in log
+    assert "name" in log
+    assert "location" in log
+
+
+def test_formatter_key_order(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    extra = {"first_key": "first_value", "second_key": "second_value"}
+    logger.warning("this is a warning", extra=extra)
+    log: Dict[str, Any] = json.loads(caplog.text)
+    assert list(log.keys()) == [
+        "level",
+        "timestamp",
+        "name",
+        "location",
+        "message",
+        "first_key",
+        "second_key",
+    ]
+
+
+def test_formatter_handles_exceptions(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    class CustomError(BaseException):
+        pass
+
+    try:
+        raise CustomError("some exception")
+    except CustomError:
+        logger.exception("fatal error")
+
+    log: Dict[str, Any] = json.loads(caplog.text)
+    assert log.get("level") == "ERROR"
+    assert log.get("message") == "fatal error"
+    assert log.get("exception_name") == "CustomError"
+    assert log.get("exception", "").startswith("Traceback")
+    assert 'raise CustomError("some exception")' in log.get("exception", "")
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "password",
+        "Authorization",
+        "authorization",
+        "Cookie",
+        "cookie",
+        "Set-Cookie",
+        "set-cookie",
+        "access_token",
+        "refresh_token",
+        "token",
+    ],
+)
+def test_formatter_redacts_output(caplog: pytest.LogCaptureFixture, key: str):
+    logger = logging.getLogger()
+    formatter = SanitizedJSONFormatter()
+    for handler in logger.handlers:
+        handler.setFormatter(formatter)
+    extra = {
+        key: "some value",
+        "nested": {
+            key: "some value",
+        },
+        "other_key": "other value",
+        "other_nested": {
+            "other_key": "other value",
+        },
+    }
+    with caplog.at_level(logging.DEBUG):
+        logger.debug("this is some debug", extra=extra)
+        log: Dict[str, Any] = json.loads(caplog.text)
+    assert log.get(key) == "REDACTED"
+    assert log.get("nested") == {key: "REDACTED"}
+    assert log.get("other_key") == "other value"
+    assert log.get("other_nested") == {"other_key": "other value"}
