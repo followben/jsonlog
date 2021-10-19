@@ -1,13 +1,11 @@
 import os
 from pathlib import Path
 
-from pydantic import BaseSettings
-
 env_file_path = Path(__file__).parent.parent / ".env"
 
 
-class DevSettings(BaseSettings):
-    is_local_dev: bool = False
+class DevSettings():
+    is_local_dev: bool = False if not os.environ.get("LOCAL_DEV") else True
 
     @property
     def is_under_test(self):
