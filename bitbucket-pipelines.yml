@@ -15,24 +15,6 @@ definitions:
             venv/bin/python -m pytest jsonlog 
 pipelines:
   pull-requests:
-    "staging":
-      - step:
-          caches:
-            - pip
-          deployment: Production
-          name: Preview changes on staging->production
-          script:
-            - *install
-            - *test
-    "develop":
-      - step:
-          caches:
-            - pip
-          deployment: Staging
-          name: Preview changes on develop->staging
-          script:
-            - *install
-            - *test
     "**":
       - step:
           caches:
@@ -43,48 +25,12 @@ pipelines:
             - *install
             - *test
   branches:
-    feature/*:
+    **:
       - step:
           caches:
             - pip
           name: test development
           deployment: Testing 
-          script:
-            - *install
-            - *test
-    bug/*:
-      - step:
-          caches:
-            - pip
-          name: test bugfix
-          deployment: Testing 
-          script:
-            - *install
-            - *test
-    develop:
-      - step:
-          caches:
-            - pip
-          name: Deploy development
-          deployment: Development
-          script:
-            - *install
-            - *test
-    staging:
-      - step:
-          caches:
-            - pip
-          name: Deploy staging
-          deployment: Staging
-          script:
-            - *install
-            - *test
-    master:
-      - step:
-          caches:
-            - pip
-          name: Deploy production
-          deployment: Production
           script:
             - *install
             - *test
