@@ -13,7 +13,6 @@ with open("README.md", "r") as fh:
 
 setup(
     name="saber-jsonlog",
-    version="0.0.37",
     packages=["jsonlog",],
     install_requires=reqs,
     author="Ben Stovold",
