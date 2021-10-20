@@ -4,7 +4,7 @@ import os
 class DevSettings():
     @property
     def is_local_dev(self) -> bool:
-        return "LOCAL_DEV" in os.environ
+        return os.environ.get("LOCAL_DEV")
 
     @property
     def is_under_test(self) -> bool:
