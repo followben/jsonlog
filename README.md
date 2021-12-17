@@ -52,5 +52,5 @@ def handler(event, context):
 
 The above example is based on [concurrent-design](https://bitbucket.org/saberastronautics/concurrent-design/src/3c0f9a3a5290d47f0743c45e51ed33d4cbd0a885/cdf/api/main.py).
 
-See an example of the logger being integrated into another repo in  [sattellite-decode-services: pull request #11](https://bitbucket.org/saberastronautics/satellite-decode-services/pull-requests/11).
+See an example of the logger being integrated into another repo in  [satellite-decode-services: pull request #11](https://bitbucket.org/saberastronautics/satellite-decode-services/pull-requests/11).
 
