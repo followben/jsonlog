@@ -49,13 +49,3 @@ def handler(event, context):
     asgi_handler = Mangum(app)
     return asgi_handler(event, context)
 ```
-
-The above example is based on [concurrent-design](https://bitbucket.org/saberastronautics/concurrent-design/src/3c0f9a3a5290d47f0743c45e51ed33d4cbd0a885/cdf/api/main.py).
-
-See an example of the logger being integrated into another repo in  [satellite-decode-services: pull request #11](https://bitbucket.org/saberastronautics/satellite-decode-services/pull-requests/11).
-
-
-## Repository Access
-This is a private Saber Astronautics repository and not all members of the organisiation will automatically have read access. If this is included as a requirement in another project, both developers and the Bitbucket pipeline associated with the project will need to be given at least read access to this repository. 
-
-To grant a Bitbucket pipeline read-only access to this repository, go to `Repository settings/SSH keys` of the project requiring access and copy the public key. Then in jsonlog, go to `Repository settings/Access keys` and add the public key (this can only be done by a repo admin, ask Ben/Nina if you need help).
