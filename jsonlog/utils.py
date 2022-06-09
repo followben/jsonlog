@@ -26,6 +26,9 @@ def configure_logging(context=None, level=logging.INFO):
         adjusted_level = logging.DEBUG if root.isEnabledFor(logging.DEBUG) else logging.WARNING
         logging.getLogger("mangum").setLevel(adjusted_level)
         logging.getLogger("asyncio").setLevel(adjusted_level)
+        logging.getLogger('boto').setLevel(adjusted_level)
+        logging.getLogger('botocore').setLevel(adjusted_level)
+
         logger.debug("Logging configured")
 
     elif dev_settings.is_under_test:
@@ -43,4 +46,8 @@ def configure_logging(context=None, level=logging.INFO):
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(formatter)
         root.addHandler(handler)
+        adjusted_level = logging.DEBUG if root.isEnabledFor(logging.DEBUG) else logging.WARNING
+        logging.getLogger('boto').setLevel(adjusted_level)
+        logging.getLogger('botocore').setLevel(adjusted_level)
+        
         logger.debug("Logging configured")
