@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import List
 
 from jsonlog.config import dev_settings
 from jsonlog.formatter import LogContext, SanitizedJSONFormatter
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 def configure_logging(
     context=None,
     level=logging.INFO,
-    suppressed_loggers: list[str] = ["mangum", "asyncio", "boto", "botocore"],
+    suppressed_loggers: List[str] = ["mangum", "asyncio", "boto", "botocore"],
 ):
 
     root = logging.getLogger()
