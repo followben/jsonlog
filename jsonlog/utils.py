@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import List
 
 from jsonlog.config import dev_settings
 from jsonlog.formatter import LogContext, SanitizedJSONFormatter
@@ -7,7 +8,7 @@ from jsonlog.formatter import LogContext, SanitizedJSONFormatter
 logger = logging.getLogger(__name__)
 
 
-def configure_logging(context=None, level=logging.INFO, suppressed_loggers: list[str] = None):
+def configure_logging(context=None, level=logging.INFO, suppressed_loggers: List[str] = None):
 
     root = logging.getLogger()
     root.setLevel(level)
