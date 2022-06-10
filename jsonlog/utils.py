@@ -7,12 +7,20 @@ from jsonlog.formatter import LogContext, SanitizedJSONFormatter
 logger = logging.getLogger(__name__)
 
 
-def configure_logging(context=None, level=logging.INFO):
+def configure_logging(context=None, level=logging.INFO, suppressed_loggers: list[str] = None):
 
     root = logging.getLogger()
     root.setLevel(level)
 
     formatter = SanitizedJSONFormatter()
+
+    adjusted_level = logging.ERROR
+    if root.isEnabledFor(logging.DEBUG):
+        adjusted_level = logging.WARNING
+
+    if suppressed_loggers:
+        for log in suppressed_loggers:
+            logging.getLogger(log).setLevel(adjusted_level)
 
     if context:
         # When running under lambda, AWS configures a root logger with a handler;
@@ -23,11 +31,10 @@ def configure_logging(context=None, level=logging.INFO):
             handler.setFormatter(formatter)
 
         # supress noisy info logs
-        adjusted_level = logging.DEBUG if root.isEnabledFor(logging.DEBUG) else logging.WARNING
         logging.getLogger("mangum").setLevel(adjusted_level)
         logging.getLogger("asyncio").setLevel(adjusted_level)
-        logging.getLogger('boto').setLevel(adjusted_level)
-        logging.getLogger('botocore').setLevel(adjusted_level)
+        logging.getLogger("boto").setLevel(adjusted_level)
+        logging.getLogger("botocore").setLevel(adjusted_level)
 
         logger.debug("Logging configured")
 
@@ -46,8 +53,7 @@ def configure_logging(context=None, level=logging.INFO):
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(formatter)
         root.addHandler(handler)
-        adjusted_level = logging.DEBUG if root.isEnabledFor(logging.DEBUG) else logging.WARNING
-        logging.getLogger('boto').setLevel(adjusted_level)
-        logging.getLogger('botocore').setLevel(adjusted_level)
-        
+        logging.getLogger("boto").setLevel(adjusted_level)
+        logging.getLogger("botocore").setLevel(adjusted_level)
+
         logger.debug("Logging configured")
