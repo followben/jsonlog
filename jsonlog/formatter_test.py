@@ -125,16 +125,18 @@ def test_formatter_redacts_output(caplog: pytest.LogCaptureFixture, key: str):
 def test_formatter_stringifies_uuids_in_extra(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
     test_uuid = uuid4()
 
-    extra = {"uuid": test_uuid}
+    extra = {"uuid": test_uuid, "nested": {"key": test_uuid}}
     logger.warning("this is a warning", extra=extra)
     log: Dict[str, Any] = json.loads(caplog.text)
     assert log.get("uuid") == str(test_uuid)
+    assert log.get("nested") == {"key": str(test_uuid)}
 
 
 def test_formatter_stringifies_datetimes_in_extra(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
     test_datetime = datetime.utcnow()
 
-    extra = {"time": test_datetime}
+    extra = {"time": test_datetime, "nested": {"key": test_datetime}}
     logger.warning("this is a warning", extra=extra)
     log: Dict[str, Any] = json.loads(caplog.text)
     assert log.get("time") == str(test_datetime)
+    assert log.get("nested") == {"key": str(test_datetime)}

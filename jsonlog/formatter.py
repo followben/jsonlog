@@ -41,6 +41,13 @@ class LogContext:
     function_version: str
 
 
+# Stringify datetimes and UUIDs
+def _json_default_serializer(obj):
+    if isinstance(obj, (datetime, UUID)):
+        return str(obj)
+    raise Exception
+
+
 class JSONFormatter(logging.Formatter):
     def __init__(self, context: Optional[LogContext] = None):
         self.context = context
@@ -58,7 +65,7 @@ class JSONFormatter(logging.Formatter):
         data = self.filter_output({k: v for k, v in data.items() if v is not None})
 
         try:
-            result = json.dumps(data)
+            result = json.dumps(data, default=_json_default_serializer)
         except Exception:
             # just making a best effort at this point
             result_dict = {
@@ -107,11 +114,7 @@ class JSONFormatter(logging.Formatter):
             "asctime"
         ] = f"{datetime.utcfromtimestamp(log_record.created):%Y-%m-%d %H:%M:%S}.{log_record.msecs:.3f}Z"
 
-        extras = {
-            k: (str(v) if (isinstance(v, UUID) or isinstance(v, datetime)) else v)
-            for k, v in record_dict.items()
-            if k not in RESERVED_LOG_ATTRS
-        }
+        extras = {k: v for k, v in record_dict.items() if k not in RESERVED_LOG_ATTRS}
 
         formatted = {}
 
