@@ -107,12 +107,11 @@ class JSONFormatter(logging.Formatter):
             "asctime"
         ] = f"{datetime.utcfromtimestamp(log_record.created):%Y-%m-%d %H:%M:%S}.{log_record.msecs:.3f}Z"
 
-        extras = {}
-        for k, v in record_dict.items():
-            if k not in RESERVED_LOG_ATTRS:
-                if isinstance(v, UUID) or isinstance(v, datetime):
-                    v = str(v)
-                extras[k] = v
+        extras = {
+            k: (str(v) if (isinstance(v, UUID) or isinstance(v, datetime)) else v)
+            for k, v in record_dict.items()
+            if k not in RESERVED_LOG_ATTRS
+        }
 
         formatted = {}
 
