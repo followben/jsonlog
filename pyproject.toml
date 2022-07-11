@@ -9,3 +9,4 @@ norecursedirs = [
   ".vscode",
   "venv",
 ]
+asyncio_mode = "auto"

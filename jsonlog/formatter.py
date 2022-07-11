@@ -4,6 +4,7 @@ import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from uuid import UUID
 
 RESERVED_LOG_ATTRS = (
     "name",
@@ -40,6 +41,13 @@ class LogContext:
     function_version: str
 
 
+# Stringify datetimes and UUIDs
+def _json_default_serializer(obj):
+    if isinstance(obj, (datetime, UUID)):
+        return str(obj)
+    raise Exception
+
+
 class JSONFormatter(logging.Formatter):
     def __init__(self, context: Optional[LogContext] = None):
         self.context = context
@@ -57,7 +65,7 @@ class JSONFormatter(logging.Formatter):
         data = self.filter_output({k: v for k, v in data.items() if v is not None})
 
         try:
-            result = json.dumps(data)
+            result = json.dumps(data, default=_json_default_serializer)
         except Exception:
             # just making a best effort at this point
             result_dict = {
@@ -91,9 +99,7 @@ class JSONFormatter(logging.Formatter):
         xray_trace_id = os.getenv("_X_AMZN_TRACE_ID")
         return xray_trace_id.split(";")[0].replace("Root=", "") if xray_trace_id else None
 
-    def _extract_log_exception(
-        self, log_record: logging.LogRecord
-    ) -> Union[Tuple[str, str], Tuple[None, None]]:
+    def _extract_log_exception(self, log_record: logging.LogRecord) -> Union[Tuple[str, str], Tuple[None, None]]:
 
         if log_record.exc_info and (exc_info := log_record.exc_info[0]):
             return self.formatException(log_record.exc_info), exc_info.__name__
@@ -107,6 +113,7 @@ class JSONFormatter(logging.Formatter):
         record_dict[
             "asctime"
         ] = f"{datetime.utcfromtimestamp(log_record.created):%Y-%m-%d %H:%M:%S}.{log_record.msecs:.3f}Z"
+
         extras = {k: v for k, v in record_dict.items() if k not in RESERVED_LOG_ATTRS}
 
         formatted = {}

@@ -1,8 +1,11 @@
 import json
 import logging
+from datetime import datetime
 from typing import Any, Dict
+from uuid import uuid4
 
 import pytest
+
 from jsonlog.formatter import JSONFormatter, SanitizedJSONFormatter
 
 
@@ -117,3 +120,23 @@ def test_formatter_redacts_output(caplog: pytest.LogCaptureFixture, key: str):
     assert log.get("nested") == {key: "REDACTED"}
     assert log.get("other_key") == "other value"
     assert log.get("other_nested") == {"other_key": "other value"}
+
+
+def test_formatter_stringifies_uuids_in_extra(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    test_uuid = uuid4()
+
+    extra = {"uuid": test_uuid, "nested": {"key": test_uuid}}
+    logger.warning("this is a warning", extra=extra)
+    log: Dict[str, Any] = json.loads(caplog.text)
+    assert log.get("uuid") == str(test_uuid)
+    assert log.get("nested") == {"key": str(test_uuid)}
+
+
+def test_formatter_stringifies_datetimes_in_extra(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    test_datetime = datetime.utcnow()
+
+    extra = {"time": test_datetime, "nested": {"key": test_datetime}}
+    logger.warning("this is a warning", extra=extra)
+    log: Dict[str, Any] = json.loads(caplog.text)
+    assert log.get("time") == str(test_datetime)
+    assert log.get("nested") == {"key": str(test_datetime)}
