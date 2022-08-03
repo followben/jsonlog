@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def configure_logging(
     context=None,
     level=logging.INFO,
-    suppressed_loggers: List[str] = ["mangum", "asyncio", "boto", "botocore", "requests"],
+    suppressed_loggers: List[str] = ["mangum", "asyncio", "boto", "botocore", "urllib3"],
 ):
 
     root = logging.getLogger()
