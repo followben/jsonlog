@@ -98,6 +98,8 @@ def test_formatter_handles_exceptions(logger: logging.Logger, caplog: pytest.Log
         "token",
     ],
 )
+
+
 def test_formatter_redacts_output(caplog: pytest.LogCaptureFixture, key: str):
     logger = logging.getLogger()
     formatter = SanitizedJSONFormatter()
@@ -140,3 +142,29 @@ def test_formatter_stringifies_datetimes_in_extra(logger: logging.Logger, caplog
     log: Dict[str, Any] = json.loads(caplog.text)
     assert log.get("time") == str(test_datetime)
     assert log.get("nested") == {"key": str(test_datetime)}
+
+
+def test_formatter_copies_nested(caplog: pytest.LogCaptureFixture):
+    logger = logging.getLogger()
+    formatter = SanitizedJSONFormatter()
+    for handler in logger.handlers:
+        handler.setFormatter(formatter)
+    extra: dict = {
+        "password": "some value",
+        "nested": {
+            "password": "some value",
+            "double_nested": {
+                "password": "some value",
+            },
+        },
+    }
+
+    with caplog.at_level(logging.DEBUG):
+        logger.debug("log", extra=extra)
+        log: Dict[str, Any] = json.loads(caplog.text)
+
+    assert log["nested"]["password"] == "REDACTED"
+    assert extra["nested"]["password"] == "some value"
+
+    assert log["nested"]["double_nested"]["password"] == "REDACTED"
+    assert extra["nested"]["double_nested"]["password"] == "some value"
