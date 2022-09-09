@@ -4,6 +4,7 @@ import logging
 import os
 from datetime import datetime
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from uuid import UUID
 
 RESERVED_LOG_ATTRS = (
     "name",
@@ -40,24 +41,21 @@ class LogContext:
     function_version: str
 
 
+# Stringify datetimes and UUIDs
+def _json_default_serializer(obj):
+    if isinstance(obj, (datetime, UUID)):
+        return str(obj)
+    raise Exception
+
+
 class JSONFormatter(logging.Formatter):
     def __init__(self, context: Optional[LogContext] = None):
         self.context = context
 
     def format(self, record: logging.LogRecord) -> str:
         data: Dict[str, Any] = {}
-        formatted, extras, message = self._extract_log_components(log_record=record)
-        data.update(formatted)
-        data["message"] = message
-        data.update(extras)
-        data["exception"], data["exception_name"] = self._extract_log_exception(log_record=record)
-        if self.context:
-            data["context"] = dataclasses.asdict(self.context)
-            data["xray_trace_id"] = self._get_latest_trace_id()
-        data = self.filter_output({k: v for k, v in data.items() if v is not None})
-
         try:
-            result = json.dumps(data)
+            formatted, extras, message = self._extract_log_components(log_record=record)
         except Exception:
             # just making a best effort at this point
             result_dict = {
@@ -74,8 +72,18 @@ class JSONFormatter(logging.Formatter):
                         "xray_trace_id": data.get("xray_trace_id"),
                     }
                 )
-            result = json.dumps(result_dict)
-        return result
+            return json.dumps(result_dict)
+
+        data.update(formatted)
+        data["message"] = message
+        data.update(extras)
+        data["exception"], data["exception_name"] = self._extract_log_exception(log_record=record)
+        if self.context:
+            data["context"] = dataclasses.asdict(self.context)
+            data["xray_trace_id"] = self._get_latest_trace_id()
+        data = self.filter_output({k: v for k, v in data.items() if v is not None})
+
+        return json.dumps(data, default=_json_default_serializer)
 
     @property
     def log_format(self):
@@ -91,9 +99,7 @@ class JSONFormatter(logging.Formatter):
         xray_trace_id = os.getenv("_X_AMZN_TRACE_ID")
         return xray_trace_id.split(";")[0].replace("Root=", "") if xray_trace_id else None
 
-    def _extract_log_exception(
-        self, log_record: logging.LogRecord
-    ) -> Union[Tuple[str, str], Tuple[None, None]]:
+    def _extract_log_exception(self, log_record: logging.LogRecord) -> Union[Tuple[str, str], Tuple[None, None]]:
 
         if log_record.exc_info and (exc_info := log_record.exc_info[0]):
             return self.formatException(log_record.exc_info), exc_info.__name__
@@ -103,11 +109,18 @@ class JSONFormatter(logging.Formatter):
     def _extract_log_components(
         self, log_record: logging.LogRecord
     ) -> Tuple[Dict[str, Any], Dict[str, Any], Union[Dict[str, Any], str, bool, Iterable]]:
-        record_dict = log_record.__dict__.copy()
+        record_dict = log_record.__dict__
         record_dict[
             "asctime"
         ] = f"{datetime.utcfromtimestamp(log_record.created):%Y-%m-%d %H:%M:%S}.{log_record.msecs:.3f}Z"
+
         extras = {k: v for k, v in record_dict.items() if k not in RESERVED_LOG_ATTRS}
+
+        # Need to avoid passing values by reference, as we modify deeply nested
+        # values when redacting sensitive values. Expect this to raise an exception
+        # if any values are not json serializable. This is a faster alternative to
+        # deepcopy
+        extras = json.loads(json.dumps(extras, default=_json_default_serializer))
 
         formatted = {}
 
