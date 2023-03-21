@@ -2,7 +2,7 @@ import dataclasses
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from uuid import UUID
 
@@ -43,7 +43,7 @@ class LogContext:
 
 # Stringify datetimes and UUIDs
 def _json_default_serializer(obj):
-    if isinstance(obj, (datetime, UUID)):
+    if isinstance(obj, (date, datetime, UUID)):
         return str(obj)
     raise Exception
 
@@ -178,8 +178,7 @@ class SanitizedJSONFormatter(JSONFormatter):
             "set-cookie",
             "cookie",
             "authorization",
-            "x-saber-api-key"
-            "x-scepter-api-key"
+            "x-saber-api-key" "x-scepter-api-key",
         ],
         case_insensitive=True,
     ):
