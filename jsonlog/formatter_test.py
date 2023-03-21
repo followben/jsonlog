@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict
 from uuid import uuid4
 
@@ -98,8 +98,6 @@ def test_formatter_handles_exceptions(logger: logging.Logger, caplog: pytest.Log
         "token",
     ],
 )
-
-
 def test_formatter_redacts_output(caplog: pytest.LogCaptureFixture, key: str):
     logger = logging.getLogger()
     formatter = SanitizedJSONFormatter()
@@ -142,6 +140,16 @@ def test_formatter_stringifies_datetimes_in_extra(logger: logging.Logger, caplog
     log: Dict[str, Any] = json.loads(caplog.text)
     assert log.get("time") == str(test_datetime)
     assert log.get("nested") == {"key": str(test_datetime)}
+
+
+def test_formatter_stringifies_dates_in_extra(logger: logging.Logger, caplog: pytest.LogCaptureFixture):
+    test_date = date.today()
+
+    extra = {"date": test_date, "nested": {"key": test_date}}
+    logger.warning("this is a warning", extra=extra)
+    log: dict[str, Any] = json.loads(caplog.text)
+    assert log.get("date") == str(test_date)
+    assert log.get("nested") == {"key": str(test_date)}
 
 
 def test_formatter_copies_nested(caplog: pytest.LogCaptureFixture):
