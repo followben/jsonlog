@@ -178,7 +178,8 @@ class SanitizedJSONFormatter(JSONFormatter):
             "set-cookie",
             "cookie",
             "authorization",
-            "x-saber-api-key" "x-scepter-api-key",
+            "x-saber-api-key",
+            "x-scepter-api-key",
         ],
         case_insensitive=True,
     ):
