@@ -60,6 +60,7 @@ def test_formatter_key_order(logger: logging.Logger, caplog: pytest.LogCaptureFi
         "timestamp",
         "name",
         "location",
+        "process",
         "message",
         "first_key",
         "second_key",

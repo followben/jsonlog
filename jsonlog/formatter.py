@@ -63,6 +63,7 @@ class JSONFormatter(logging.Formatter):
                 "timestamp": data.get("timestamp"),
                 "name": data.get("name"),
                 "location": data.get("location"),
+                "process": data.get("process"),
                 "message": "ERROR: could not serialize log message",
             }
             if data.get("context") or data.get("xray_trace_id"):
@@ -92,6 +93,7 @@ class JSONFormatter(logging.Formatter):
             "timestamp": "%(asctime)s",
             "name": "%(name)s",
             "location": "%(funcName)s:%(lineno)d",
+            "process": "%(process)d",
         }
 
     @staticmethod
@@ -100,7 +102,6 @@ class JSONFormatter(logging.Formatter):
         return xray_trace_id.split(";")[0].replace("Root=", "") if xray_trace_id else None
 
     def _extract_log_exception(self, log_record: logging.LogRecord) -> Union[Tuple[str, str], Tuple[None, None]]:
-
         if log_record.exc_info and (exc_info := log_record.exc_info[0]):
             return self.formatException(log_record.exc_info), exc_info.__name__
 
